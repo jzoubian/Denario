@@ -7,6 +7,8 @@ from langchain_core.runnables import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
+from langchain_community.llms import Ollama
+from langchain_community.chat_models import ChatOllama
 
 from .parameters import GraphState
 from .latex_presets import journal_dict
@@ -33,6 +35,16 @@ def preprocess_node(state: GraphState, config: RunnableConfig):
         state['llm']['llm'] = ChatAnthropic(model=state['llm']['model'],
                                             temperature=state['llm']['temperature'],
                                             anthropic_api_key=state["keys"].ANTHROPIC)
+    
+    # Ollama models (local, free)
+    elif any(key in state['llm']['model'] for key in ['qwen', 'llama', 'deepseek', 'mistral', 'phi']):
+        ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+        state['llm']['llm'] = ChatOllama(
+            model=state['llm']['model'],
+            temperature=state['llm']['temperature'] if state['llm']['temperature'] is not None else 0.7,
+            base_url=ollama_base_url,
+            num_ctx=state['llm'].get('max_output_tokens', 32768)
+        )
     
     # set the tokens usage
     state['tokens'] = {'ti': 0, 'to': 0, 'i': 0, 'o': 0}

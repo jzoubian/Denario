@@ -80,6 +80,78 @@ claude41opus = LLM(name="claude-opus-4-1-20250805",
                    temperature=0)
 """`claude-4.1-Opus` model."""
 
+# Ollama models (local, free)
+qwen25coder32b = LLM(name="qwen2.5-coder:32b",
+                     max_output_tokens=32768,
+                     temperature=0.7)
+"""`qwen2.5-coder:32b` model - Best local coding model."""
+
+qwen25coder14b = LLM(name="qwen2.5-coder:14b",
+                     max_output_tokens=32768,
+                     temperature=0.7)
+"""`qwen2.5-coder:14b` model - Good local coding model."""
+
+qwen25coder7b = LLM(name="qwen2.5-coder:7b",
+                    max_output_tokens=32768,
+                    temperature=0.7)
+"""`qwen2.5-coder:7b` model - Fast local coding model."""
+
+qwen2572b = LLM(name="qwen2.5:72b",
+                max_output_tokens=32768,
+                temperature=0.7)
+"""`qwen2.5:72b` model - Best local general model."""
+
+qwen2532b = LLM(name="qwen2.5:32b",
+                max_output_tokens=32768,
+                temperature=0.7)
+"""`qwen2.5:32b` model - Great local general model."""
+
+qwen2514b = LLM(name="qwen2.5:14b",
+                max_output_tokens=32768,
+                temperature=0.7)
+"""`qwen2.5:14b` model - Good local general model."""
+
+qwen257b = LLM(name="qwen2.5:7b",
+               max_output_tokens=32768,
+               temperature=0.7)
+"""`qwen2.5:7b` model - Fast local general model."""
+
+# Qwen 3 models (latest generation)
+qwen3coder30b = LLM(name="qwen3-coder:30b",
+                    max_output_tokens=32768,
+                    temperature=0.7)
+"""`qwen3-coder:30b` model - Latest generation coding model."""
+
+qwen330b = LLM(name="qwen3:30b",
+               max_output_tokens=32768,
+               temperature=0.7)
+"""`qwen3:30b` model - Latest generation general model."""
+
+llama3370b = LLM(name="llama3.3:70b",
+                 max_output_tokens=32768,
+                 temperature=0.7)
+"""`llama3.3:70b` model - Excellent local model."""
+
+llama33text = LLM(name="llama3.3:text",
+                  max_output_tokens=32768,
+                  temperature=0.7)
+"""`llama3.3:text` model - Optimized llama3.3."""
+
+llama323b = LLM(name="llama3.2:3b",
+                max_output_tokens=32768,
+                temperature=0.7)
+"""`llama3.2:3b` model - Fast local reasoning model."""
+
+deepseekcoderv216b = LLM(name="deepseek-coder-v2:16b",
+                         max_output_tokens=32768,
+                         temperature=0.7)
+"""`deepseek-coder-v2:16b` model - Good local coding model."""
+
+deepseekmathv3 = LLM(name="deepseek-math:7b",
+                     max_output_tokens=32768,
+                     temperature=0.7)
+"""`deepseek-math:7b` model - Math reasoning model."""
+
 models : Dict[str, LLM] = {
                             "gemini-2.0-flash" : gemini20flash,
                             "gemini-2.5-flash" : gemini25flash,
@@ -95,5 +167,21 @@ models : Dict[str, LLM] = {
                             "claude-3.7-sonnet" : claude37sonnet,
                             "claude-4-opus" : claude4opus,
                             "claude-4.1-opus" : claude41opus,
+                            # Ollama models (local, free)
+                            "qwen2.5-coder:32b" : qwen25coder32b,
+                            "qwen2.5-coder:14b" : qwen25coder14b,
+                            "qwen2.5-coder:7b" : qwen25coder7b,
+                            "qwen2.5:72b" : qwen2572b,
+                            "qwen2.5:32b" : qwen2532b,
+                            "qwen2.5:14b" : qwen2514b,
+                            "qwen2.5:7b" : qwen257b,
+                            # Qwen 3 models (latest generation)
+                            "qwen3-coder:30b" : qwen3coder30b,
+                            "qwen3:30b" : qwen330b,
+                            "llama3.3:70b" : llama3370b,
+                            "llama3.3:text" : llama33text,
+                            "llama3.2:3b" : llama323b,
+                            "deepseek-coder-v2:16b" : deepseekcoderv216b,
+                            "deepseek-math:7b" : deepseekmathv3,
                            }
 """Dictionary with the available models."""

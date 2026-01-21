@@ -5,7 +5,12 @@ import os
 import shutil
 from pathlib import Path
 from PIL import Image 
-import cmbagent
+
+# Do NOT import cmbagent at module level to avoid slow autogen/google-cloud-aiplatform imports
+# It will be imported only when actually using cmbagent mode methods
+CMBAGENT_AVAILABLE = True
+cmbagent = None
+preprocess_task = None
 
 from .config import DEFAUL_PROJECT_NAME, INPUT_FILES, PLOTS_FOLDER, DESCRIPTION_FILE, IDEA_FILE, METHOD_FILE, RESULTS_FILE, LITERATURE_FILE
 from .research import Research
@@ -18,7 +23,6 @@ from .experiment import Experiment
 from .paper_agents.agents_graph import build_graph
 from .utils import llm_parser, input_check, check_file_paths, in_notebook
 from .langgraph_agents.agents_graph import build_lg_graph
-from cmbagent import preprocess_task
 
 class Denario:
     """
@@ -228,6 +232,9 @@ class Denario:
             summarizer_model: LLM to be used for summarization.
             summarizer_response_formatter_model: LLM to be used for formatting the summarization response.
         """
+
+        # Import cmbagent only when needed
+        from cmbagent import preprocess_task
 
         # Check if data description exists
         if not hasattr(self.research, 'data_description') or not self.research.data_description:

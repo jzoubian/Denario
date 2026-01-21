@@ -84,14 +84,74 @@ def create_work_dir(work_dir: str | Path, name: str) -> Path:
     return Path(work_dir)
 
 def get_task_result(chat_history, name: str):
-    """Get task result from chat history"""
+    """Get task result from chat history
     
+    For cmbagent mode, the actual results are stored in messages from 'plan_recorder' or formatted agents.
+    The chat history has a specific structure where the final plan is recorded by plan_recorder.
+    
+    Due to cmbagent routing issues, we may need to search more broadly for results.
+    """
+    
+    # For cmbagent idea generation, look for 'plan_recorder' instead of 'idea_maker_nest' 
+    if name == 'idea_maker_nest':
+        # Try to find the actual result in various possible locations
+        # 1. First try plan_recorder
+        result = _search_chat_history(chat_history, 'plan_recorder')
+        if result:
+            return result
+        
+        # 2. Try idea_maker_response_formatter
+        result = _search_chat_history(chat_history, 'idea_maker_response_formatter')
+        if result:
+            return result
+            
+        # 3. Try the last substantive message from idea_maker or idea_hater
+        for obj in chat_history[::-1]:
+            if not isinstance(obj, dict):
+                continue
+            if obj.get('name') in ['idea_maker', 'idea_hater']:
+                content = obj.get('content', '')
+                # Check if this looks like a final research idea (has title or description)
+                if content and len(content) > 200 and ('title' in content.lower() or 'research' in content.lower()):
+                    return content
+        
+        # 4. Fall through to standard search
+        name = 'plan_recorder'
+    
+    result = _search_chat_history(chat_history, name)
+    
+    if result is None:
+        raise ValueError(f"No result found for task '{name}' in chat history")
+    
+    return result
+
+
+def _search_chat_history(chat_history, agent_name: str):
+    """Helper function to search for agent output in chat history"""
     for obj in chat_history[::-1]:
-        if obj['name'] == name:
-            result = obj['content']
-            break
-    task_result = result
-    return task_result
+        # Skip objects that don't have a 'name' key
+        if not isinstance(obj, dict) or 'name' not in obj:
+            continue
+        if obj['name'] == agent_name:
+            # Get content - might be in 'content' field or in tool_calls
+            if 'content' in obj and obj['content']:
+                return obj['content']
+            # Check if there are tool_calls with arguments containing the result
+            elif 'tool_calls' in obj and obj['tool_calls']:
+                for tool_call in obj['tool_calls']:
+                    if 'function' in tool_call and 'arguments' in tool_call['function']:
+                        import json
+                        try:
+                            args = json.loads(tool_call['function']['arguments'])
+                            # For plan_recorder, look for 'plan_suggestion'
+                            if 'plan_suggestion' in args:
+                                return args['plan_suggestion']
+                            # For idea recording, look for 'improved_main_task'
+                            elif 'improved_main_task' in args:
+                                return args['improved_main_task']
+                        except:
+                            pass
+    return None
 
 def in_notebook():
     """Check whether the code is run from a Jupyter Notebook or not, to use different display options"""

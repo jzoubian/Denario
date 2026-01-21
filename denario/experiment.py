@@ -1,6 +1,5 @@
 import re
 from pathlib import Path
-import cmbagent
 
 from .key_manager import KeyManager
 from .prompts.experiment import experiment_planner_prompt, experiment_engineer_prompt, experiment_researcher_prompt
@@ -18,16 +17,16 @@ class Experiment:
                  keys: KeyManager,
                  work_dir: str | Path,
                  involved_agents: list[str] = ['engineer', 'researcher'],
-                 engineer_model: str = "gpt-4.1",
-                 researcher_model: str = "o3-mini-2025-01-31",
-                 planner_model: str = "gpt-4o",
-                 plan_reviewer_model: str = "o3-mini",
+                 engineer_model: str = "qwen3-coder:30b",  # Changed from gpt-4.1 for Ollama
+                 researcher_model: str = "qwen3:30b",  # Changed from o3-mini-2025-01-31 for Ollama
+                 planner_model: str = "qwen3:30b",  # Changed from gpt-4o for Ollama
+                 plan_reviewer_model: str = "qwen3:30b",  # Changed from o3-mini for Ollama
                  restart_at_step: int = -1,
                  hardware_constraints: str | None = None,
                  max_n_attempts: int = 10,
                  max_n_steps: int = 6,
-                 orchestration_model = "gpt-4.1",
-                 formatter_model = "o3-mini",
+                 orchestration_model = "qwen3:30b",  # Changed from gpt-4.1 for Ollama
+                 formatter_model = "qwen3:30b",  # Changed from o3-mini for Ollama
                 ):
         
         self.engineer_model = engineer_model
@@ -78,6 +77,9 @@ class Experiment:
         print(f"Max n steps: {self.max_n_steps}")
         print(f"Restart at step: {self.restart_at_step}")
         print(f"Hardware constraints: {self.hardware_constraints}")
+
+        # Import cmbagent only when needed
+        import cmbagent
 
         results = cmbagent.planning_and_control_context_carryover(data_description,
                             n_plan_reviews = 1,

@@ -1,6 +1,5 @@
 import re
 from pathlib import Path
-import cmbagent
 
 from .key_manager import KeyManager
 from .prompts.method import method_planner_prompt, method_researcher_prompt
@@ -18,11 +17,11 @@ class Method:
                  research_idea: str,
                  keys: KeyManager,
                  work_dir: str | Path,
-                 researcher_model = "gpt-4.1-2025-04-14",
-                 planner_model = "gpt-4.1-2025-04-14",
-                 plan_reviewer_model = "o3-mini",
-                 orchestration_model = "gpt-4.1",
-                 formatter_model = "o3-mini",
+                 researcher_model = "qwen3:30b",  # Changed from gpt-4.1-2025-04-14 for Ollama
+                 planner_model = "qwen3:30b",  # Changed from gpt-4.1-2025-04-14 for Ollama
+                 plan_reviewer_model = "qwen3:30b",  # Changed from o3-mini for Ollama
+                 orchestration_model = "qwen3:30b",  # Changed from gpt-4.1 for Ollama
+                 formatter_model = "qwen3:30b",  # Changed from o3-mini for Ollama
                 ):
         
         self.researcher_model = researcher_model
@@ -45,6 +44,9 @@ class Method:
         Args:
             data_description: description of the data and tools to be used.
         """
+
+        # Import cmbagent only when needed
+        import cmbagent
 
         results = cmbagent.planning_and_control_context_carryover(data_description,
                               n_plan_reviews = 1,
