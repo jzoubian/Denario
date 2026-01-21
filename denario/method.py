@@ -71,6 +71,14 @@ class Method:
             raise e
         
         MD_CODE_BLOCK_PATTERN = r"```[ \t]*(?:markdown)[ \t]*\r?\n(.*)\r?\n[ \t]*```"
-        extracted_methodology = re.findall(MD_CODE_BLOCK_PATTERN, task_result, flags=re.DOTALL)[0]
+        matches = re.findall(MD_CODE_BLOCK_PATTERN, task_result, flags=re.DOTALL)
+        
+        if matches:
+            extracted_methodology = matches[0]
+        else:
+            # If no markdown block found, use the full task_result
+            print("Warning: No markdown code block found, using full result")
+            extracted_methodology = task_result
+        
         clean_methodology = re.sub(r'^<!--.*?-->\s*\n', '', extracted_methodology)
         return clean_methodology
