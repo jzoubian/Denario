@@ -118,6 +118,29 @@ def get_task_result(chat_history, name: str):
         # 4. Fall through to standard search
         name = 'plan_recorder'
     
+    # For cmbagent method/experiment generation, look for researcher output
+    elif name == 'researcher_response_formatter':
+        # Try to find the researcher output
+        # 1. First try the formatter itself
+        result = _search_chat_history(chat_history, 'researcher_response_formatter')
+        if result:
+            return result
+        
+        # 2. Try just 'researcher'
+        result = _search_chat_history(chat_history, 'researcher')
+        if result:
+            return result
+            
+        # 3. Try the last substantive message from researcher
+        for obj in chat_history[::-1]:
+            if not isinstance(obj, dict):
+                continue
+            if obj.get('name') == 'researcher':
+                content = obj.get('content', '')
+                # Check if this looks like methodology or results
+                if content and len(content) > 200:
+                    return content
+    
     result = _search_chat_history(chat_history, name)
     
     if result is None:
@@ -129,9 +152,17 @@ def get_task_result(chat_history, name: str):
 def _search_chat_history(chat_history, agent_name: str):
     """Helper function to search for agent output in chat history"""
     for obj in chat_history[::-1]:
-        # Skip objects that don't have a 'name' key
-        if not isinstance(obj, dict) or 'name' not in obj:
+        # Skip objects that aren't dicts
+        if not isinstance(obj, dict):
             continue
+            
+        # Check for messages without a name but with substantial content (>10000 chars)
+        # These often contain the final formatted output
+        if 'name' not in obj or not obj.get('name'):
+            if 'content' in obj and isinstance(obj['content'], str) and len(obj['content']) > 10000:
+                return obj['content']
+            continue
+            
         if obj['name'] == agent_name:
             # Get content - might be in 'content' field or in tool_calls
             if 'content' in obj and obj['content']:
