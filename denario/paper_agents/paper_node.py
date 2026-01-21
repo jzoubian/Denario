@@ -55,6 +55,11 @@ def keywords_node(state: GraphState, config: RunnableConfig):
                 state, result = LLM_call(PROMPT, state)
                 keywords = extract_latex_block(state, result, "Keywords")
                 
+                # Handle None case
+                if keywords is None:
+                    print(f"None returned ", end="", flush=True)
+                    continue
+                
                 # get the keywords and make a list with them
                 input_keywords = [kw.strip() for kw in keywords.split(',') if kw.strip()]
             
