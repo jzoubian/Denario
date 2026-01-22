@@ -606,8 +606,10 @@ def keyword_prompt(state):
         text = f.read()
 
     # Split by pipe and strip whitespace from each keyword
-    keywords = [kw.strip() for kw in text.split('|') if kw.strip()]
-    keywords_list = "".join(keywords)
+    keywords_list = [kw.strip() for kw in text.split('|') if kw.strip()]
+    
+    # Create a formatted string for the prompt with newlines
+    keywords_text = "\n".join(keywords_list)
 
 
     return [SystemMessage(content=f"""You are a {state['writer']}"""),
@@ -633,7 +635,7 @@ Methods:
 
 AAS keywords list:
             
-{keywords_list}
+{keywords_text}
 
 **Please respond in this format**
 
@@ -642,4 +644,4 @@ AAS keywords list:
 \\end{{Keywords}}
 
 In <Keywords>, place the selected keywords separated by a comma
-""")], keywords
+""")], keywords_list
