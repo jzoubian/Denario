@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 
@@ -117,11 +118,90 @@ class Experiment:
             user_choice = input("\nEnter your choice (1/2/3/4) [default: 2]: ").strip() or "2"
             
             if user_choice == "1":
-                print("\n📝 Please fix the code in the experiment directory and press Enter when done...")
-                input("Press Enter to continue...")
-                print("⚠️  Note: Automatic re-execution is not implemented. Please run the code manually.")
-                print("Then provide the results manually (option 2).")
-                user_choice = "2"
+                import subprocess
+                import glob
+                
+                print("\n📝 Manual Code Fix Mode")
+                print("="*80)
+                print(f"\nGenerated code directory: {self.experiment_dir}/control/codebase/")
+                print("\nSteps:")
+                print("1. Open the Python files in the directory above")
+                print("2. Fix any errors (GPU usage, missing imports, logic errors, etc.)")
+                print("3. Save your changes")
+                print("4. Press Enter here to test execution")
+                print("\n" + "="*80)
+                
+                input("\nPress Enter when you've fixed the code...")
+                
+                # Try to find the main script to execute
+                codebase_dir = f"{self.experiment_dir}/control/codebase"
+                py_files = glob.glob(f"{codebase_dir}/*.py")
+                
+                if not py_files:
+                    print(f"\n❌ No Python files found in {codebase_dir}")
+                    print("Falling back to manual results entry...")
+                    user_choice = "2"
+                else:
+                    print(f"\n🔍 Found {len(py_files)} Python file(s):")
+                    for i, f in enumerate(py_files, 1):
+                        print(f"  {i}. {os.path.basename(f)}")
+                    
+                    # Ask which file to run
+                    if len(py_files) == 1:
+                        script_to_run = py_files[0]
+                        print(f"\n▶️  Running: {os.path.basename(script_to_run)}")
+                    else:
+                        file_choice = input(f"\nWhich file should be the main script? (1-{len(py_files)}): ").strip()
+                        try:
+                            idx = int(file_choice) - 1
+                            if 0 <= idx < len(py_files):
+                                script_to_run = py_files[idx]
+                            else:
+                                print("Invalid choice. Using first file.")
+                                script_to_run = py_files[0]
+                        except:
+                            print("Invalid input. Using first file.")
+                            script_to_run = py_files[0]
+                    
+                    # Execute the script
+                    try:
+                        print(f"\n🚀 Executing: python {script_to_run}")
+                        print("="*80 + "\n")
+                        
+                        result = subprocess.run(
+                            ["python", script_to_run],
+                            cwd=codebase_dir,
+                            capture_output=True,
+                            text=True,
+                            timeout=600  # 10 minute timeout
+                        )
+                        
+                        print(result.stdout)
+                        if result.stderr:
+                            print("\n⚠️  Stderr output:")
+                            print(result.stderr)
+                        
+                        if result.returncode == 0:
+                            print("\n✅ Code executed successfully!")
+                            print("\nNow please provide a summary of the results:")
+                            user_choice = "2"
+                        else:
+                            print(f"\n❌ Execution failed with return code {result.returncode}")
+                            retry = input("\nTry again? (y/n) [y]: ").strip().lower()
+                            if retry != 'n':
+                                print("Please fix the code and re-run the workflow.")
+                                raise e
+                            else:
+                                print("Falling back to manual results entry...")
+                                user_choice = "2"
+                    
+                    except subprocess.TimeoutExpired:
+                        print("\n⏱️  Execution timed out (10 minutes)")
+                        print("The script may be stuck or taking too long.")
+                        user_choice = "2"
+                    except Exception as exec_error:
+                        print(f"\n❌ Error executing script: {exec_error}")
+                        user_choice = "2"
             
             if user_choice == "2":
                 print("\n📝 Please enter the results manually.")
