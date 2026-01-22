@@ -81,25 +81,76 @@ class Experiment:
         # Import cmbagent only when needed
         import cmbagent
 
-        results = cmbagent.planning_and_control_context_carryover(data_description,
-                            n_plan_reviews = 1,
-                            max_n_attempts = self.max_n_attempts,
-                            max_plan_steps = self.max_n_steps,
-                            max_rounds_control = 500,
-                            engineer_model = self.engineer_model,
-                            researcher_model = self.researcher_model,
-                            planner_model = self.planner_model,
-                            plan_reviewer_model = self.plan_reviewer_model,
-                            plan_instructions=self.planner_append_instructions,
-                            researcher_instructions=self.researcher_append_instructions,
-                            engineer_instructions=self.engineer_append_instructions,
-                            work_dir = self.experiment_dir,
-                            api_keys = self.api_keys,
-                            restart_at_step = self.restart_at_step,
-                            hardware_constraints = self.hardware_constraints,
-                            default_llm_model = self.orchestration_model,
-                            default_formatter_model = self.formatter_model
-                            )
+        try:
+            results = cmbagent.planning_and_control_context_carryover(data_description,
+                                n_plan_reviews = 1,
+                                max_n_attempts = self.max_n_attempts,
+                                max_plan_steps = self.max_n_steps,
+                                max_rounds_control = 500,
+                                engineer_model = self.engineer_model,
+                                researcher_model = self.researcher_model,
+                                planner_model = self.planner_model,
+                                plan_reviewer_model = self.plan_reviewer_model,
+                                plan_instructions=self.planner_append_instructions,
+                                researcher_instructions=self.researcher_append_instructions,
+                                engineer_instructions=self.engineer_append_instructions,
+                                work_dir = self.experiment_dir,
+                                api_keys = self.api_keys,
+                                restart_at_step = self.restart_at_step,
+                                hardware_constraints = self.hardware_constraints,
+                                default_llm_model = self.orchestration_model,
+                                default_formatter_model = self.formatter_model
+                                )
+        except Exception as e:
+            print("\n" + "="*80)
+            print("⚠️  CMBAGENT EXECUTION FAILED")
+            print("="*80)
+            print(f"\nError: {e}")
+            print(f"\nThe code execution failed after {self.max_n_attempts} attempts.")
+            print(f"Generated code is in: {self.experiment_dir}")
+            print("\nYou have the following options:")
+            print("1. Check the generated code and fix it manually")
+            print("2. Skip this step and provide results manually")
+            print("3. Retry with different settings")
+            print("4. Abort the workflow")
+            
+            user_choice = input("\nEnter your choice (1/2/3/4) [default: 2]: ").strip() or "2"
+            
+            if user_choice == "1":
+                print("\n📝 Please fix the code in the experiment directory and press Enter when done...")
+                input("Press Enter to continue...")
+                print("⚠️  Note: Automatic re-execution is not implemented. Please run the code manually.")
+                print("Then provide the results manually (option 2).")
+                user_choice = "2"
+            
+            if user_choice == "2":
+                print("\n📝 Please enter the results manually.")
+                print("You can provide a summary of your findings in markdown format.")
+                print("Type 'END' on a new line when finished:\n")
+                
+                manual_results = []
+                while True:
+                    line = input()
+                    if line.strip() == "END":
+                        break
+                    manual_results.append(line)
+                
+                self.results = "\n".join(manual_results)
+                self.plot_paths = []
+                print("\n✅ Manual results saved.")
+                return None
+            
+            elif user_choice == "3":
+                print("\n💡 To retry with different settings:")
+                print("1. Modify the input files (data_description.md, methods.md)")
+                print("2. Adjust max_n_attempts or hardware_constraints")
+                print("3. Run the script again")
+                raise e
+            
+            else:  # choice == "4" or anything else
+                print("\n❌ Aborting workflow.")
+                raise e
+        
         chat_history = results['chat_history']
         final_context = results['final_context']
         
