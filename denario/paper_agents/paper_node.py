@@ -176,8 +176,16 @@ def abstract_node(state: GraphState, config: RunnableConfig):
                 state['paper']['Abstract'] = fix_percent(state['paper']['Abstract']) #fix % by \%
 
         # save temporary file
-        temp_file(state, f_temp2, 'write', state['paper']['Title'])
-        temp_file(state, f_temp1, 'write', state['paper']['Abstract'])
+        if state['paper'].get('Title') is not None:
+            temp_file(state, f_temp2, 'write', state['paper']['Title'])
+        else:
+            print(f"Warning: Title is None, skipping temp file write ", end="", flush=True)
+        
+        if state['paper'].get('Abstract') is not None:
+            temp_file(state, f_temp1, 'write', state['paper']['Abstract'])
+        else:
+            print(f"Warning: Abstract is None, skipping temp file write ", end="", flush=True)
+            raise RuntimeError("Abstract is None after extraction")
 
         # compile title and abstract. If there are errors, try to fix them
         compile_tex_document(state, f_temp2, state['files']['Temp'])           #title
