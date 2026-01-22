@@ -52,14 +52,18 @@ def keywords_node(state: GraphState, config: RunnableConfig):
                 
                 try:
                     # Extract keywords
+                    print(f"[calling keyword_prompt] ", end="", flush=True)
                     PROMPT, keywords_list = keyword_prompt(state)
+                    print(f"[got keywords_list type={type(keywords_list)}] ", end="", flush=True)
                     
                     # Check if keywords_list is valid
                     if keywords_list is None:
                         print(f"keywords_list is None ", end="", flush=True)
                         continue
                     
+                    print(f"[calling LLM] ", end="", flush=True)
                     state, result = LLM_call(PROMPT, state)
+                    print(f"[extracting block] ", end="", flush=True)
                     keywords = extract_latex_block(state, result, "Keywords")
                     
                     # Handle None case
@@ -67,6 +71,7 @@ def keywords_node(state: GraphState, config: RunnableConfig):
                         print(f"None returned ", end="", flush=True)
                         continue
                     
+                    print(f"[processing keywords] ", end="", flush=True)
                     # get the keywords and make a list with them
                     input_keywords = [kw.strip() for kw in keywords.split(',') if kw.strip()]
                 
@@ -81,7 +86,9 @@ def keywords_node(state: GraphState, config: RunnableConfig):
                     if len(keywords)>=state['params']['num_keywords']:
                         break
                 except Exception as e:
-                    print(f"Error in keyword extraction attempt {attempt}: {type(e).__name__}: {e} ", end="", flush=True)
+                    import traceback
+                    print(f"\nError: {type(e).__name__}: {e}\n", end="", flush=True)
+                    print(f"Traceback: {traceback.format_exc()}\n", end="", flush=True)
                     continue
             else:
                 print("Failed to get the keywords ",end="",flush=True)
