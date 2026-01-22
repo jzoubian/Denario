@@ -50,35 +50,39 @@ def keywords_node(state: GraphState, config: RunnableConfig):
 
                 print(f'{attempt} ', end="",flush=True)
                 
-                # Extract keywords
-                PROMPT, keywords_list = keyword_prompt(state)
+                try:
+                    # Extract keywords
+                    PROMPT, keywords_list = keyword_prompt(state)
+                    
+                    # Check if keywords_list is valid
+                    if keywords_list is None:
+                        print(f"keywords_list is None ", end="", flush=True)
+                        continue
+                    
+                    state, result = LLM_call(PROMPT, state)
+                    keywords = extract_latex_block(state, result, "Keywords")
+                    
+                    # Handle None case
+                    if keywords is None:
+                        print(f"None returned ", end="", flush=True)
+                        continue
+                    
+                    # get the keywords and make a list with them
+                    input_keywords = [kw.strip() for kw in keywords.split(',') if kw.strip()]
                 
-                # Check if keywords_list is valid
-                if keywords_list is None:
-                    print(f"keywords_list is None ", end="", flush=True)
-                    continue
-                
-                state, result = LLM_call(PROMPT, state)
-                keywords = extract_latex_block(state, result, "Keywords")
-                
-                # Handle None case
-                if keywords is None:
-                    print(f"None returned ", end="", flush=True)
-                    continue
-                
-                # get the keywords and make a list with them
-                input_keywords = [kw.strip() for kw in keywords.split(',') if kw.strip()]
-            
-                # Check which choosen keywords are actually AAS keywords
-                matched_keywords = [kw for kw in input_keywords if kw in keywords_list]
-                matched_keywords = ', '.join(matched_keywords)
-                keywords = matched_keywords
+                    # Check which choosen keywords are actually AAS keywords
+                    matched_keywords = [kw for kw in input_keywords if kw in keywords_list]
+                    matched_keywords = ', '.join(matched_keywords)
+                    keywords = matched_keywords
 
-                # get the number of keywords
-                keywords = [item.strip() for item in keywords.split(',') if item.strip()]
-                
-                if len(keywords)>=state['params']['num_keywords']:
-                    break
+                    # get the number of keywords
+                    keywords = [item.strip() for item in keywords.split(',') if item.strip()]
+                    
+                    if len(keywords)>=state['params']['num_keywords']:
+                        break
+                except Exception as e:
+                    print(f"Error in keyword extraction attempt {attempt}: {type(e).__name__}: {e} ", end="", flush=True)
+                    continue
             else:
                 print("Failed to get the keywords ",end="",flush=True)
                 keywords = [""]
