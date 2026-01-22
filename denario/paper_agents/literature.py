@@ -16,9 +16,21 @@ def _execute_query(payload, keys: KeyManager):
     """
     api_key = keys.PERPLEXITY
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    response = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=payload).json()
-
-    return response
+    
+    response = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=payload)
+    
+    # Check if request was successful
+    if response.status_code != 200:
+        print(f"\nPerplexity API Error: Status {response.status_code}")
+        print(f"Response text: {response.text[:500]}")
+        raise RuntimeError(f"Perplexity API returned status {response.status_code}: {response.text[:200]}")
+    
+    try:
+        return response.json()
+    except requests.exceptions.JSONDecodeError as e:
+        print(f"\nPerplexity API returned invalid JSON")
+        print(f"Response text: {response.text[:500]}")
+        raise
 
 
 def perplexity(para, keys: KeyManager):
