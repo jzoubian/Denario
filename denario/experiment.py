@@ -109,7 +109,13 @@ class Experiment:
             raise e
             
         MD_CODE_BLOCK_PATTERN = r"```[ \t]*(?:markdown)[ \t]*\r?\n(.*)\r?\n[ \t]*```"
-        extracted_results = re.findall(MD_CODE_BLOCK_PATTERN, task_result, flags=re.DOTALL)[0]
+        matches = re.findall(MD_CODE_BLOCK_PATTERN, task_result, flags=re.DOTALL)
+        if matches:
+            extracted_results = matches[0]
+        else:
+            print("Warning: No markdown code block found in results, using full task_result")
+            extracted_results = task_result
+        
         clean_results = re.sub(r'^<!--.*?-->\s*\n', '', extracted_results)
         self.results = clean_results
         self.plot_paths = final_context['displayed_images']
