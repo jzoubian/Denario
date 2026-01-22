@@ -33,7 +33,44 @@ def _execute_query(payload, keys: KeyManager):
         raise
 
 
-def perplexity(para, keys: KeyManager):
+def perplexity_ollama_fallback(para, llm):
+    """
+    Fallback method using local Ollama when Perplexity API is not available.
+    Returns paragraph without citations since we can't do real literature search locally.
+    """
+    print("(using Ollama fallback - no citations) ", end="", flush=True)
+    # For now, just return the paragraph unchanged with empty citations
+    # In the future, this could use Ollama to suggest placeholder citations
+    return (para, [])
+
+
+def perplexity(para, keys: KeyManager, llm=None):
+    """
+    Add citations to a paragraph using Perplexity API or Ollama fallback.
+    
+    Args:
+        para: The paragraph text to add citations to
+        keys: KeyManager with API keys
+        llm: Optional Ollama LLM instance for fallback
+    
+    Returns:
+        tuple: (text_with_citations, list_of_citation_urls)
+    """
+    # Check if Perplexity API key is available
+    try:
+        api_key = keys.PERPLEXITY
+        if not api_key or api_key == "":
+            raise AttributeError("No Perplexity API key")
+    except (AttributeError, KeyError):
+        # Fall back to Ollama (no real citations)
+        if llm is not None:
+            return perplexity_ollama_fallback(para, llm)
+        else:
+            # No citations at all
+            print("(skipping citations) ", end="", flush=True)
+            return (para, [])
+    
+    # Use Perplexity API
     perplexity_message = rf"""
 You perform scientific literature search on the arXiv. 
     
@@ -72,27 +109,36 @@ Your answear should not have the formating marks <TEXT> and </TEXT>, just the te
     "messages": [{"role": "system", "content": "Be precise and concise. Follow the instructions."}, {"role": "user", "content": perplexity_message}],
     "search_domain_filter": ["arxiv.org"],
     }
-    perplexity_response = _execute_query(payload, keys)
-    content = perplexity_response["choices"][0]["message"]["content"]
-    citations = perplexity_response["citations"]
-    cleaned_response = re.sub(r'<think>.*?</think>\s*', '', content, flags=re.DOTALL)
+    
+    try:
+        perplexity_response = _execute_query(payload, keys)
+        content = perplexity_response["choices"][0]["message"]["content"]
+        citations = perplexity_response["citations"]
+        cleaned_response = re.sub(r'<think>.*?</think>\s*', '', content, flags=re.DOTALL)
 
-    def citation_repl(match):
-        # Extract the citation number as a string and convert to an integer.
-        number_str = match.group(1)
-        index = int(number_str) - 1  # Adjust for 0-based indexing
-        if 0 <= index < len(citations):
-            return f'[[{number_str}]({citations[index]})]'
-        # If the citation number is out of bounds, return it unchanged.
-        return match.group(0)
-    # Replace all instances of citations in the form [x] using the helper function.
-    # markdown_response = re.sub(r'\[(\d+)\]', citation_repl, cleaned_response)
-    #display(Markdown(markdown_response))
-    return (cleaned_response, citations)
+        def citation_repl(match):
+            # Extract the citation number as a string and convert to an integer.
+            number_str = match.group(1)
+            index = int(number_str) - 1  # Adjust for 0-based indexing
+            if 0 <= index < len(citations):
+                return f'[[{number_str}]({citations[index]})]'
+            # If the citation number is out of bounds, return it unchanged.
+            return match.group(0)
+        # Replace all instances of citations in the form [x] using the helper function.
+        # markdown_response = re.sub(r'\[(\d+)\]', citation_repl, cleaned_response)
+        #display(Markdown(markdown_response))
+        return (cleaned_response, citations)
+    except Exception as e:
+        print(f"\nPerplexity API failed: {e}")
+        print("Falling back to Ollama (no citations)")
+        if llm is not None:
+            return perplexity_ollama_fallback(para, llm)
+        else:
+            return (para, [])
 
 
 
-def process_tex_file_with_references(text, keys: KeyManager, nparagraphs=None):
+def process_tex_file_with_references(text, keys: KeyManager, llm=None, nparagraphs=None):
     """
     Processes a LaTeX file by inserting `\\citep{}` references and generating a corresponding .bib file.
     
@@ -106,9 +152,9 @@ def process_tex_file_with_references(text, keys: KeyManager, nparagraphs=None):
       - Writes the modified .tex file and an updated bibliography file.
     
     Args:
-        fname_tex (str): Path to the input .tex file.
-        fname_bib (str): Path to the output .bib file.
-        perplexity (callable): A function that processes a paragraph.
+        text (str): The LaTeX text content.
+        keys (KeyManager): Key manager with API keys.
+        llm: Optional Ollama LLM instance for fallback.
         nparagraphs (int, optional): Maximum number of paragraphs to process.
     """
     
@@ -132,7 +178,7 @@ def process_tex_file_with_references(text, keys: KeyManager, nparagraphs=None):
         for attempt in range(2):
             # Replace the following line with your actual perplexity call if needed.
             # new_para, citations = para, []  # e.g., new_para, citations = perplexity(para)
-            new_para, citations = perplexity(para, keys)
+            new_para, citations = perplexity(para, keys, llm)
             if new_para is not None:
                 break  # exit the retry loop if successful
             else:
