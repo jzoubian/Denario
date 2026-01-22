@@ -16,8 +16,20 @@ def LLM_call(prompt, state):
     """
 
     message = state['llm']['llm'].invoke(prompt)
-    input_tokens  = message.usage_metadata['input_tokens']
-    output_tokens = message.usage_metadata['output_tokens']
+    
+    # Handle different LLM providers' metadata formats
+    if hasattr(message, 'usage_metadata') and message.usage_metadata is not None:
+        input_tokens  = message.usage_metadata.get('input_tokens', 0)
+        output_tokens = message.usage_metadata.get('output_tokens', 0)
+    elif hasattr(message, 'response_metadata') and message.response_metadata is not None:
+        # Ollama format
+        input_tokens  = message.response_metadata.get('prompt_eval_count', 0)
+        output_tokens = message.response_metadata.get('eval_count', 0)
+    else:
+        # Fallback if no metadata available
+        input_tokens = 0
+        output_tokens = 0
+    
     if output_tokens>state['llm']['max_output_tokens']:
         print('WARNING!! Max output tokens reach!')
     state['tokens']['ti'] += input_tokens
