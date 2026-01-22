@@ -1,3 +1,4 @@
+from pathlib import Path
 from langchain_core.runnables import RunnableConfig
 
 from ..paper_agents.tools import extract_latex_block, LLM_call_stream, clean_section
@@ -17,8 +18,15 @@ def referee(state: GraphState, config: RunnableConfig):
     pdf_path = f"{state['files']['Paper_folder']}/{paper_name}"
     out_dir = f"{state['files']['paper_images']}"
 
-    # get the base64 representation of the images
-    state['referee']['images'] = pdf_to_images(pdf_path, out_dir)
+    # Check if PDF exists, if not skip image analysis
+    if Path(pdf_path).exists():
+        # get the base64 representation of the images
+        state['referee']['images'] = pdf_to_images(pdf_path, out_dir)
+    else:
+        print(f"\nWarning: PDF not found at {pdf_path}")
+        print("Skipping visual analysis (LaTeX not compiled). Install texlive-xetex to enable PDF generation.")
+        print("Proceeding with text-based review only...")
+        state['referee']['images'] = []
 
     # call the LLM
     PROMPT = reviewer_fast_prompt(state)
