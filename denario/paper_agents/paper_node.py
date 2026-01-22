@@ -52,6 +52,12 @@ def keywords_node(state: GraphState, config: RunnableConfig):
                 
                 # Extract keywords
                 PROMPT, keywords_list = keyword_prompt(state)
+                
+                # Check if keywords_list is valid
+                if keywords_list is None:
+                    print(f"keywords_list is None ", end="", flush=True)
+                    continue
+                
                 state, result = LLM_call(PROMPT, state)
                 keywords = extract_latex_block(state, result, "Keywords")
                 
@@ -79,7 +85,10 @@ def keywords_node(state: GraphState, config: RunnableConfig):
                 state['params']['num_keywords'] = 0
 
             # take a random subset
-            keywords = random.sample(keywords, state['params']['num_keywords'])
+            if state['params']['num_keywords'] > 0 and len(keywords) > 0:
+                keywords = random.sample(keywords, min(state['params']['num_keywords'], len(keywords)))
+            else:
+                keywords = []
 
             # join all keywords into a string with comma separated
             keywords = ", ".join(keywords)
