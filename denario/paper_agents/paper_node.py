@@ -162,8 +162,18 @@ def abstract_node(state: GraphState, config: RunnableConfig):
             # improve abstract
             PROMPT = abstract_reflection(state)
             state, result = LLM_call(PROMPT, state)
-            state['paper']['Abstract'] = extract_latex_block(state, result, "Abstract")
-            state['paper']['Abstract'] = fix_percent(state['paper']['Abstract']) #fix % by \%
+            try:
+                abstract = extract_latex_block(state, result, "Abstract")
+                if abstract is not None:
+                    state['paper']['Abstract'] = abstract
+                else:
+                    print(f"Warning: extract_latex_block returned None for Abstract reflection attempt {i} ", end="", flush=True)
+            except Exception as e:
+                print(f"Error extracting Abstract in reflection {i}: {type(e).__name__}: {e} ", end="", flush=True)
+            
+            # Only fix percent if Abstract is not None
+            if state['paper']['Abstract'] is not None:
+                state['paper']['Abstract'] = fix_percent(state['paper']['Abstract']) #fix % by \%
 
         # save temporary file
         temp_file(state, f_temp2, 'write', state['paper']['Title'])
@@ -175,7 +185,8 @@ def abstract_node(state: GraphState, config: RunnableConfig):
         if not(success):
             state['latex']['section_to_fix'] = 'Abstract'
             state, fixed = fix_latex(state, f_temp1)
-            state['paper']['Abstract'] = fix_percent(state['paper']['Abstract']) #fix % by \%
+            if state['paper']['Abstract'] is not None:
+                state['paper']['Abstract'] = fix_percent(state['paper']['Abstract']) #fix % by \%
 
     # Save paper and temporary file
     save_paper(state, state['files']['Paper_v1'])
